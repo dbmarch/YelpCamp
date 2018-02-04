@@ -95,7 +95,7 @@ router.get ('/:id/edit', mw.checkCampgroundOwnership, function (req,res){
 // UPDATE CAMPGROUND ROUTE
 
 router.put ('/:id', mw.checkCampgroundOwnership, function (req,res){
-    console.log ('passing geocode: '+req.body.location);
+    console.log ('passing geocode: '+ req.body.location);
      geocoder.geocode(req.body.location, function (err, data) {
     if (err)     {
         req.flash('error', err.message);        
