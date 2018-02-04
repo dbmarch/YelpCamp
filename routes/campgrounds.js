@@ -1,5 +1,6 @@
 var express = require('express'),
     router = express.Router(),
+    mw = require('../middleware'),
     Campground = require ('../models/campground');
 
 // Campground Routes
@@ -11,6 +12,8 @@ router.get ('/', function(req,res) {
     Campground.find({}, function(err,allCampgrounds){
         if(err) {
             console.log(err);
+            req.flash('Error', "Error adding to the database");
+
         } else {
             res.render('campgrounds/index', {campgrounds:allCampgrounds});
         }
@@ -18,7 +21,7 @@ router.get ('/', function(req,res) {
 });
 
 // CREATE 
-router.post ('/', isLoggedIn, function(req,res) {
+router.post ('/', mw.isLoggedIn, function(req,res) {
     // get data from form and add to campground array
     // redirect back to campgrounds page.
     
@@ -36,8 +39,10 @@ router.post ('/', isLoggedIn, function(req,res) {
  
     Campground.create(newCampground, function(err, newlyCreated) {
         if(err) {
+            req.flash('Error', "Error adding to the database");
             console.log("error adding to database");
         } else {
+            req.flash ('success', 'Campground Created');
             res.redirect('/campgrounds');
         }
     });
@@ -45,7 +50,7 @@ router.post ('/', isLoggedIn, function(req,res) {
 });
 
 // NEW
-router.get ('/new', isLoggedIn, function(req,res) {
+router.get ('/new', mw.isLoggedIn, function(req,res) {
    res.render('campgrounds/new') ;
 });
 
@@ -57,6 +62,8 @@ router.get ('/:id', function(req,res){
     Campground.findById(req.params.id).populate('comments').exec(function(err, foundCampground) {
         if(err) {
             console.log(err);
+            req.flash('Error', "Unable to find campground");
+
         }else {
             console.log(foundCampground);
             res.render ('campgrounds/show', {campground:foundCampground});
@@ -66,7 +73,7 @@ router.get ('/:id', function(req,res){
 
 
 //EDIT CAMPGROUND ROUTE
-router.get ('/:id/edit', checkCampgroundOwnership, function (req,res){
+router.get ('/:id/edit', mw.checkCampgroundOwnership, function (req,res){
    // check if user logged in and then check if they authored campground
    Campground.findById(req.params.id, function(err, foundCampground){
       res.render ('campgrounds/edit', {campground: foundCampground});
@@ -75,57 +82,31 @@ router.get ('/:id/edit', checkCampgroundOwnership, function (req,res){
 
 // UPDATE CAMPGROUND ROUTE
 
-router.put ('/:id', checkCampgroundOwnership, function (req,res){
+router.put ('/:id', mw.checkCampgroundOwnership, function (req,res){
     Campground.findByIdAndUpdate(req.params.id, req.body.campground, function(err, updatedCampground) {
         if(err) {
+            req.flash('Error', "Unable to find campground");
             res.redirect('/campgrounds');
         } else {
+            req.flash ('success', 'Campground Updated');
             res.redirect('/campgrounds/' + req.params.id);
         }
     });
 });
 
 // DESTROY CAMPGROUND ROUTE
-router.delete('/:id', checkCampgroundOwnership, function (req, res) {
+router.delete('/:id', mw.checkCampgroundOwnership, function (req, res) {
       Campground.findByIdAndRemove(req.params.id, function(err){
           if(err){
+             req.flash('Error', "Unable to find campground");
               res.redirect('/campgrounds');
           } else {
+              req.flash ('success', 'Campground Removed');
               res.redirect('/campgrounds');
           }
       });
 });
 
-function isLoggedIn(req,res,next){
-    if (req.isAuthenticated()) {
-        return next();
-    }
-    res.redirect('/login');
-}
-
-function checkCampgroundOwnership(req,res,next){
-   if (req.isAuthenticated()) {
-       Campground.findById(req.params.id, function(err, foundCampground){
-           if (err) {
-               res.redirect('back');
-           } else {
-               console.log(foundCampground.author.id);  // object
-               console.log(req.user._id); // string
-               if (foundCampground.author.id.equals(req.user._id)) {
-                  console.log("author is logged in");
-                  return next();
-                  //next();
-               } else {
-                  res.redirect('back');
-                  console.log('author is NOT logged in');
-               }
-                   
-           }
-       }); 
-   } else {
-       res.redirect('back');
-   }
-}
 
 
 module.exports = router;

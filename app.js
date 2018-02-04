@@ -4,6 +4,7 @@ bodyParser      = require('body-parser'),
 morgan          = require('morgan'),
 mongoose        = require('mongoose'),
 methodOverride  = require('method-override'),
+flash           = require('connect-flash'),
 Campground      = require('./models/campground'),
 Comment         = require('./models/comment'),
 User            = require('./models/user'),
@@ -24,9 +25,11 @@ app.use (express.static(__dirname + '/public'));
 app.use (methodOverride("_method"));
 app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded( { extended: true } ) ) ;
+app.use (flash());
 
 app.use(morgan('combined'));
 morgan(':remote-addr :method :url :uuid');
+
 
 //seedDB();
 
@@ -50,6 +53,8 @@ morgan(function (req, res) {
 // This caches the currently logged in user.
 app.use (function (req,res,next) {
     res.locals.currentUser = req.user;
+    res.locals.error = req.flash('error');
+    res.locals.success=req.flash('success');
     next();
 });
 
