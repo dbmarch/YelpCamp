@@ -1,14 +1,13 @@
 var express = require('express'),
     router = express.Router(),
     mw = require('../middleware'),
+    geocoder = require('geocoder'),
     Campground = require ('../models/campground');
 
 // Campground Routes
 router.get ('/', function(req,res) {
     // Get all the campgrounds
 
-    //console.log(req.user);
-    
     Campground.find({}, function(err,allCampgrounds){
         if(err) {
             console.log(err);
@@ -25,28 +24,41 @@ router.post ('/', mw.isLoggedIn, function(req,res) {
     // get data from form and add to campground array
     // redirect back to campgrounds page.
     
+    var today = new Date(Date.now());
     
-    var name = req.body.name;
-    var image = req.body.image;
-    var desc = req.body.description;
-    var author = {
-        id: req.user._id,
-        username: req.user.username
-    };
-    
-    var newCampground= {name: name, image:image, description:desc, author: author};
-    // campgrounds.push(newCampground);
- 
-    Campground.create(newCampground, function(err, newlyCreated) {
-        if(err) {
-            req.flash('Error', "Error adding to the database");
-            console.log("error adding to database");
-        } else {
-            req.flash ('success', 'Campground Created');
-            res.redirect('/campgrounds');
-        }
-    });
-    
+    geocoder.geocode(req.body.location, function (err, data) {
+    if (err)     {
+        req.flash('error', err.message);        
+        console.log('geocode returns error'+err.message); 
+        res.redirect('back');
+    } else {
+        var lat = data.results[0].geometry.location.lat;
+        var lng = data.results[0].geometry.location.lng;
+        var location = data.results[0].formatted_address;
+        
+        var name = req.body.name;
+        var image = req.body.image;
+        var price = req.body.price;
+        var desc = req.body.description;
+        var author = {
+            id: req.user._id,
+            username: req.user.username
+        };
+        
+        var newCampground= {name: name, price: price, created: today.toDateString(), image:image, description:desc, author: author, location: location, lat: lat, lng: lng};
+        // campgrounds.push(newCampground);
+     
+        Campground.create(newCampground, function(err, newlyCreated) {
+            if(err) {
+                req.flash('Error', "Error adding to the database");
+                console.log("error adding to database");
+            } else {
+                req.flash ('success', 'Campground Created');
+                res.redirect('/campgrounds');
+            }
+        });
+    }
+    }); 
 });
 
 // NEW
@@ -83,15 +95,32 @@ router.get ('/:id/edit', mw.checkCampgroundOwnership, function (req,res){
 // UPDATE CAMPGROUND ROUTE
 
 router.put ('/:id', mw.checkCampgroundOwnership, function (req,res){
-    Campground.findByIdAndUpdate(req.params.id, req.body.campground, function(err, updatedCampground) {
-        if(err) {
-            req.flash('Error', "Unable to find campground");
-            res.redirect('/campgrounds');
-        } else {
-            req.flash ('success', 'Campground Updated');
-            res.redirect('/campgrounds/' + req.params.id);
-        }
-    });
+    console.log ('passing geocode: '+req.body.location);
+     geocoder.geocode(req.body.location, function (err, data) {
+    if (err)     {
+        req.flash('error', err.message);        
+        console.log('geocode returns error'+err.message); 
+        res.redirect('back');
+    } else {
+        console.log (data);
+        var lat = data.results[0].geometry.location.lat;
+        var lng = data.results[0].geometry.location.lng;
+        var location = data.results[0].formatted_address;
+        
+        console.log ('location: ' + location +  ' lat: '+ lat + ' long: '+ lng);
+        var newData = {name: req.body.name, image: req.body.image, description: req.body.description, price: req.body.price, location: location, lat: lat, lng: lng};
+    
+        Campground.findByIdAndUpdate(req.params.id, {$set: newData}, function(err, updatedCampground) {
+            if(err) {
+                req.flash('Error', "Unable to find campground");
+                res.redirect('/campgrounds');
+            } else {
+                req.flash ('success', 'Campground Updated');
+                res.redirect('/campgrounds/' + req.params.id);
+            }
+       });
+    }
+  });
 });
 
 // DESTROY CAMPGROUND ROUTE

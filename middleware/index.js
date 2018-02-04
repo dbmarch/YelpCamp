@@ -28,9 +28,9 @@ middlewareObj.checkCampgroundOwnership = function(req,res,next){
                      console.log("author is logged in");
                    next();
                } else {
-                   req.flash('Error', "You did not create the campground");
-                  res.redirect('back');
+                  req.flash('Error', "You did not create the campground");
                   console.log('author is NOT logged in');
+                  res.redirect('back');
                }
                    
            }
@@ -61,9 +61,9 @@ middlewareObj.checkCommentOwnership = function (req,res,next){
                   console.log("author is logged in");
                   next();
                } else {
-                  res.redirect('back');
                   req.flash('Error', "You did not create the comment");
                   console.log('author is NOT logged in');
+                  res.redirect('back');
                }
                    
            }

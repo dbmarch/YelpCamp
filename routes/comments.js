@@ -40,8 +40,9 @@ router.post ('/', mw.isLoggedIn, function (req, res) {
                }else{
                 //   console.log(comment._id);
                 //   console.log('new comment username will be: '+ req.user.username);
-
+                   var today = new Date(Date.now());
                    comment.author.id      = req.user._id;
+                   comment.date           = today.toDateString();
                    comment.author.username=req.user.username;
                    comment.save();
                    
