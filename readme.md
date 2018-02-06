@@ -1,5 +1,13 @@
 #YelpCamp
 
+The application is deployed on heroku:
+
+https://rocky-mountain-82650.herokuapp.com/
+
+
+The mongo database is hosted on mLab
+
+
 
 Authentication  
 authorization
